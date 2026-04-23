@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SDXL Image Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Variables ─── */
+    :root {
+      --bg:        #080a0f;
+      --surface:   #0e1118;
+      --panel:     #13161f;
+      --border:    #1e2535;
+      --ember:     #e8651a;
+      --ember-dim: #7a3310;
+      --gold:      #c9993a;
+      --gold-dim:  #5a4218;
+      --text:      #d4cbbf;
+      --text-dim:  #6b6155;
+      --white:     #f2ede6;
+      --error:     #c0392b;
+      --success:   #27ae60;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Crimson Pro', Georgia, serif;
+      font-size: 17px;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── Animated background ─── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 20% 80%, rgba(232,101,26,.07) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 50% at 80% 10%, rgba(201,153,58,.05) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── Header ─── */
+    header {
+      position: relative; z-index: 1;
+      text-align: center;
+      padding: 3rem 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .rune-line {
+      font-size: .7rem;
+      letter-spacing: .5rem;
+      color: var(--ember-dim);
+      text-transform: uppercase;
+      margin-bottom: .75rem;
+    }
+
+    h1 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.8rem, 5vw, 3.2rem);
+      font-weight: 900;
+      color: var(--white);
+      letter-spacing: .04em;
+      line-height: 1.15;
+    }
+
+    h1 span { color: var(--ember); }
+
+    .subtitle {
+      margin-top: .75rem;
+      font-style: italic;
+      color: var(--text-dim);
+      font-size: .95rem;
+      letter-spacing: .02em;
+    }
+
+    /* ─── Main layout ─── */
+    .app {
+      position: relative; z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    @media (max-width: 768px) {
+      .app { grid-template-columns: 1fr; }
+    }
+
+    /* ─── Panel base ─── */
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.75rem;
+    }
+
+    .panel-title {
+      font-family: 'Cinzel', serif;
+      font-size: .78rem;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+    }
+
+    .panel-title::before {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ─── Form elements ─── */
+    label {
+      display: block;
+      font-size: .82rem;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: .45rem;
+    }
+
+    textarea, input[type="number"], input[type="text"] {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--white);
+      font-family: 'Crimson Pro', serif;
+      font-size: 1rem;
+      padding: .65rem .9rem;
+      border-radius: 3px;
+      outline: none;
+      transition: border-color .2s;
+      resize: vertical;
+    }
+
+    textarea:focus, input:focus {
+      border-color: var(--ember);
+    }
+
+    textarea { min-height: 110px; }
+
+    .field { margin-bottom: 1.25rem; }
+
+    /* ─── Sliders ─── */
+    .slider-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .slider-wrap label { display: flex; justify-content: space-between; }
+    .slider-val {
+      color: var(--ember);
+      font-size: .9rem;
+      font-family: 'Cinzel', serif;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      outline: none;
+      margin-top: .5rem;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--ember);
+      cursor: pointer;
+      transition: transform .15s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+
+    /* ─── Generate button ─── */
+    #generateBtn {
+      width: 100%;
+      margin-top: .5rem;
+      padding: .9rem 1rem;
+      background: transparent;
+      border: 1px solid var(--ember);
+      color: var(--ember);
+      font-family: 'Cinzel', serif;
+      font-size: .85rem;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: background .2s, color .2s, box-shadow .2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #generateBtn:hover:not(:disabled) {
+      background: var(--ember);
+      color: #000;
+      box-shadow: 0 0 30px rgba(232,101,26,.35);
+    }
+
+    #generateBtn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+    }
+
+    /* ─── Presets ─── */
+    .presets-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .6rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .preset-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: 'Cinzel', serif;
+      font-size: .7rem;
+      letter-spacing: .08em;
+      padding: .55rem .6rem;
+      cursor: pointer;
+      border-radius: 3px;
+      text-transform: uppercase;
+      transition: border-color .2s, color .2s;
+      text-align: center;
+    }
+
+    .preset-btn:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* ─── Output panel ─── */
+    .output-panel {
+      position: sticky;
+      top: 1.5rem;
+    }
+
+    .image-container {
+      width: 100%;
+      aspect-ratio: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .image-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      animation: fadeIn .6s ease;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: scale(1.02); } to { opacity: 1; transform: scale(1); } }
+
+    .placeholder {
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .placeholder-icon {
+      font-size: 3rem;
+      opacity: .15;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .placeholder p {
+      font-style: italic;
+      color: var(--text-dim);
+      font-size: .9rem;
+    }
+
+    /* ─── Loading overlay ─── */
+    .loading-overlay {
+      position: absolute; inset: 0;
+      background: rgba(8,10,15,.85);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .loading-overlay.active { display: flex; }
+
+    .ember-ring {
+      width: 52px; height: 52px;
+      border: 2px solid var(--border);
+      border-top-color: var(--ember);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text {
+      font-family: 'Cinzel', serif;
+      font-size: .72rem;
+      letter-spacing: .15em;
+      color: var(--ember);
+      text-transform: uppercase;
+    }
+
+    .loading-sub {
+      font-style: italic;
+      font-size: .82rem;
+      color: var(--text-dim);
+      max-width: 200px;
+      text-align: center;
+    }
+
+    /* ─── Status / toast ─── */
+    #status {
+      margin-top: 1rem;
+      padding: .7rem 1rem;
+      border-radius: 3px;
+      font-size: .88rem;
+      display: none;
+    }
+
+    #status.error   { display: block; background: rgba(192,57,43,.15); border: 1px solid var(--error); color: #e57567; }
+    #status.success { display: block; background: rgba(39,174,96,.1);  border: 1px solid var(--success); color: #58d68d; }
+    #status.info    { display: block; background: rgba(232,101,26,.1); border: 1px solid var(--ember-dim); color: var(--ember); }
+
+    /* ─── Download btn ─── */
+    #downloadBtn {
+      display: none;
+      width: 100%;
+      margin-top: .9rem;
+      padding: .7rem;
+      background: transparent;
+      border: 1px solid var(--gold-dim);
+      color: var(--gold);
+      font-family: 'Cinzel', serif;
+      font-size: .75rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: background .2s, border-color .2s;
+      text-align: center;
+    }
+
+    #downloadBtn:hover { background: rgba(201,153,58,.1); border-color: var(--gold); }
+
+    /* ─── Metadata ─── */
+    #metaPanel {
+      display: none;
+      margin-top: 1rem;
+      padding: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      font-size: .8rem;
+      color: var(--text-dim);
+    }
+
+    #metaPanel.visible { display: block; }
+    #metaPanel strong { color: var(--text); }
+
+    /* ─── Footer ─── */
+    footer {
+      position: relative; z-index: 1;
+      text-align: center;
+      padding: 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: .75rem;
+      color: var(--text-dim);
+      letter-spacing: .05em;
+    }
+
+    footer a { color: var(--ember-dim); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="rune-line">⚔ Proyecto IA · SDXL · Stable Diffusion ⚔</div>
+  <h1>Image <span>Forge</span></h1>
+  <p class="subtitle">Generación fotorrealista mediante Stable Diffusion XL</p>
+</header>
+
+<main class="app">
+
+  <!-- ── LEFT: Controls ── -->
+  <section>
+
+    <!-- Presets -->
+    <div class="panel" style="margin-bottom:1.5rem;">
+      <div class="panel-title">Estilos Predefinidos</div>
+      <div class="presets-grid" id="presetsGrid">
+        <div class="preset-btn" style="opacity:.5; font-size:.65rem;">Cargando...</div>
+      </div>
+    </div>
+
+    <!-- Prompt form -->
+    <div class="panel">
+      <div class="panel-title">Configuración</div>
+
+      <div class="field">
+        <label for="prompt">Prompt — describe tu imagen</label>
+        <textarea id="prompt" placeholder="burned medieval knight in full plate armor, charred black metal, glowing ember cracks, apocalyptic sky, cinematic, photorealistic, masterpiece..."></textarea>
+      </div>
+
+      <div class="field">
+        <label for="negPrompt">Negative Prompt — qué evitar</label>
+        <textarea id="negPrompt" style="min-height:70px;" placeholder="cartoon, anime, blurry, watermark, low quality...">cartoon, anime, low poly, 3d render, plastic, shiny chrome, bright colors, blurry, low quality, watermark, text, logo</textarea>
+      </div>
+
+      <div class="field slider-group">
+        <div class="slider-wrap">
+          <label>Guidance Scale <span class="slider-val" id="gsVal">7.5</span></label>
+          <input type="range" id="guidanceScale" min="1" max="20" step="0.5" value="7.5" />
+        </div>
+        <div class="slider-wrap">
+          <label>Inference Steps <span class="slider-val" id="stepsVal">30</span></label>
+          <input type="range" id="inferenceSteps" min="10" max="50" step="5" value="30" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="seed">Seed (opcional — deja vacío para aleatorio)</label>
+        <input type="number" id="seed" placeholder="42" />
+      </div>
+
+      <button id="generateBtn">⚡ Forjar Imagen</button>
+    </div>
+
+  </section>
+
+  <!-- ── RIGHT: Output ── -->
+  <section class="output-panel">
+    <div class="panel">
+      <div class="panel-title">Resultado</div>
+
+      <div class="image-container" id="imgContainer">
+        <div class="placeholder">
+          <span class="placeholder-icon">🔥</span>
+          <p>La imagen forjada aparecerá aquí.<br/>Configura tu prompt y presiona <em>Forjar</em>.</p>
+        </div>
+        <div class="loading-overlay" id="loadingOverlay">
+          <div class="ember-ring"></div>
+          <div class="loading-text">Forjando...</div>
+          <div class="loading-sub">El modelo puede tardar 20–60 seg en el primer intento</div>
+        </div>
+      </div>
+
+      <div id="status"></div>
+      <button id="downloadBtn">⬇ Descargar Imagen</button>
+      <div id="metaPanel"></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Powered by <a href="https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0" target="_blank">Stable Diffusion XL</a>
+  via Hugging Face Inference API &nbsp;·&nbsp;
+  Backend: FastAPI &nbsp;·&nbsp;
+  Deploy: Render.com
+</footer>
+
+<script>
+  // ── State ──────────────────────────────────────────────
+  let currentImageB64 = null;
+
+  // ── Sliders ──────────────────────────────────────────
+  const gsSlider    = document.getElementById('guidanceScale');
+  const stepsSlider = document.getElementById('inferenceSteps');
+  gsSlider.addEventListener('input',    () => document.getElementById('gsVal').textContent    = gsSlider.value);
+  stepsSlider.addEventListener('input', () => document.getElementById('stepsVal').textContent = stepsSlider.value);
+
+  // ── Load Presets ──────────────────────────────────────
+  async function loadPresets() {
+    try {
+      const res  = await fetch('/presets');
+      const data = await res.json();
+      const grid = document.getElementById('presetsGrid');
+      grid.innerHTML = '';
+      data.presets.forEach(p => {
+        const btn = document.createElement('button');
+        btn.className = 'preset-btn';
+        btn.textContent = p.style;
+        btn.addEventListener('click', () => {
+          document.getElementById('prompt').value    = p.prompt;
+          document.getElementById('negPrompt').value = p.negative_prompt;
+        });
+        grid.appendChild(btn);
+      });
+    } catch (e) {
+      document.getElementById('presetsGrid').innerHTML = '<span style="color:var(--text-dim);font-size:.75rem;">No se pudieron cargar los presets.</span>';
+    }
+  }
+
+  loadPresets();
+
+  // ── Status helper ────────────────────────────────────
+  function setStatus(msg, type = 'info') {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className   = type;
+  }
+
+  function clearStatus() {
+    const el = document.getElementById('status');
+    el.className = '';
+    el.textContent = '';
+  }
+
+  // ── Generate ──────────────────────────────────────────
+  document.getElementById('generateBtn').addEventListener('click', async () => {
+    const prompt = document.getElementById('prompt').value.trim();
+    if (!prompt) { setStatus('Escribe un prompt antes de generar.', 'error'); return; }
+
+    const btn     = document.getElementById('generateBtn');
+    const overlay = document.getElementById('loadingOverlay');
+    const dlBtn   = document.getElementById('downloadBtn');
+    const meta    = document.getElementById('metaPanel');
+
+    btn.disabled     = true;
+    btn.textContent  = '⏳ Generando...';
+    overlay.classList.add('active');
+    dlBtn.style.display = 'none';
+    meta.classList.remove('visible');
+    clearStatus();
+
+    const seedVal = document.getElementById('seed').value;
+    const payload = {
+      prompt:               prompt,
+      negative_prompt:      document.getElementById('negPrompt').value.trim() || undefined,
+      guidance_scale:       parseFloat(gsSlider.value),
+      num_inference_steps:  parseInt(stepsSlider.value),
+      seed:                 seedVal !== '' ? parseInt(seedVal) : null,
+    };
+
+    try {
+      const res  = await fetch('/generate', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.detail || `Error ${res.status}`);
+      }
+
+      // Show image
+      currentImageB64 = data.image_base64;
+      const container = document.getElementById('imgContainer');
+      const existing  = container.querySelector('img');
+      if (existing) existing.remove();
+      container.querySelector('.placeholder')?.remove();
+
+      const img = document.createElement('img');
+      img.src = `data:image/png;base64,${currentImageB64}`;
+      img.alt = prompt;
+      container.insertBefore(img, overlay);
+
+      // Download button
+      dlBtn.style.display = 'block';
+      dlBtn.onclick = () => {
+        const a   = document.createElement('a');
+        a.href     = `data:image/png;base64,${currentImageB64}`;
+        a.download = `sdxl_${Date.now()}.png`;
+        a.click();
+      };
+
+      // Metadata
+      meta.classList.add('visible');
+      meta.innerHTML = `
+        <strong>Prompt:</strong> ${data.prompt_used}<br/>
+        <strong>Guidance Scale:</strong> ${data.parameters.guidance_scale} &nbsp;
+        <strong>Steps:</strong> ${data.parameters.num_inference_steps} &nbsp;
+        <strong>Seed:</strong> ${data.parameters.seed ?? 'aleatorio'}
+      `;
+
+      setStatus('✓ Imagen generada exitosamente.', 'success');
+
+    } catch (err) {
+      setStatus(`Error: ${err.message}`, 'error');
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = '⚡ Forjar Imagen';
+      overlay.classList.remove('active');
+    }
+  });
+</script>
+</body>
+</html>
