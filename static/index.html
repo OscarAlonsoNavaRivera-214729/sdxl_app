@@ -1,618 +1,598 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SDXL Image Generator</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet" />
-  <style>
-    /* ─── Variables ─── */
-    :root {
-      --bg:        #080a0f;
-      --surface:   #0e1118;
-      --panel:     #13161f;
-      --border:    #1e2535;
-      --ember:     #e8651a;
-      --ember-dim: #7a3310;
-      --gold:      #c9993a;
-      --gold-dim:  #5a4218;
-      --text:      #d4cbbf;
-      --text-dim:  #6b6155;
-      --white:     #f2ede6;
-      --error:     #c0392b;
-      --success:   #27ae60;
-    }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Image Forge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #07090f;
+    --surface:  #0d1117;
+    --panel:    #111520;
+    --border:   rgba(255,255,255,0.07);
+    --border2:  rgba(255,255,255,0.13);
+    --text:     #e2e4ec;
+    --muted:    #6b7280;
+    --accent:   #7c6af7;
+    --accent2:  #a78bfa;
+    --star:     rgba(255,255,255,0.55);
+  }
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Crimson Pro', Georgia, serif;
-      font-size: 17px;
-      line-height: 1.6;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Sora', system-ui, sans-serif;
+    font-size: 15px;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
-    /* ─── Animated background ─── */
-    body::before {
-      content: '';
-      position: fixed; inset: 0;
-      background:
-        radial-gradient(ellipse 60% 40% at 20% 80%, rgba(232,101,26,.07) 0%, transparent 60%),
-        radial-gradient(ellipse 40% 50% at 80% 10%, rgba(201,153,58,.05) 0%, transparent 60%);
-      pointer-events: none;
-      z-index: 0;
-    }
+  /* Stars background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 15% 25%, var(--star) 0%, transparent 100%),
+      radial-gradient(1px 1px at 42% 8%,  var(--star) 0%, transparent 100%),
+      radial-gradient(1px 1px at 68% 33%, var(--star) 0%, transparent 100%),
+      radial-gradient(1px 1px at 85% 12%, var(--star) 0%, transparent 100%),
+      radial-gradient(1px 1px at 27% 55%, var(--star) 0%, transparent 100%),
+      radial-gradient(1px 1px at 54% 72%, var(--star) 0%, transparent 100%),
+      radial-gradient(1px 1px at 91% 61%, var(--star) 0%, transparent 100%),
+      radial-gradient(1px 1px at 7%  80%, var(--star) 0%, transparent 100%),
+      radial-gradient(1px 1px at 76% 88%, var(--star) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 33% 42%, rgba(255,255,255,0.7) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 61% 19%, rgba(255,255,255,0.7) 0%, transparent 100%),
+      radial-gradient(2px 2px at 48% 93%,  rgba(180,160,255,0.6)   0%, transparent 100%),
+      radial-gradient(ellipse 55% 35% at 50% 0%,   rgba(90,70,180,0.18) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 25% at 20% 100%, rgba(60,40,140,0.12) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
 
-    /* ─── Header ─── */
-    header {
-      position: relative; z-index: 1;
-      text-align: center;
-      padding: 3rem 1rem 2rem;
-      border-bottom: 1px solid var(--border);
-    }
+  /* Header */
+  header {
+    position: relative; z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .9rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(7,9,15,0.8);
+    backdrop-filter: blur(12px);
+    flex-shrink: 0;
+  }
 
-    .rune-line {
-      font-size: .7rem;
-      letter-spacing: .5rem;
-      color: var(--ember-dim);
-      text-transform: uppercase;
-      margin-bottom: .75rem;
-    }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    font-size: .95rem;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -.01em;
+  }
 
-    h1 {
-      font-family: 'Cinzel', serif;
-      font-size: clamp(1.8rem, 5vw, 3.2rem);
-      font-weight: 900;
-      color: var(--white);
-      letter-spacing: .04em;
-      line-height: 1.15;
-    }
+  .logo-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
 
-    h1 span { color: var(--ember); }
+  .model-badge {
+    font-size: .7rem;
+    padding: .25rem .65rem;
+    border-radius: 99px;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    letter-spacing: .03em;
+  }
 
-    .subtitle {
-      margin-top: .75rem;
-      font-style: italic;
-      color: var(--text-dim);
-      font-size: .95rem;
-      letter-spacing: .02em;
-    }
+  /* Chat area */
+  #chat {
+    position: relative; z-index: 1;
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem 1rem;
+    scroll-behavior: smooth;
+  }
 
-    /* ─── Main layout ─── */
-    .app {
-      position: relative; z-index: 1;
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 2.5rem 1.5rem 4rem;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 2rem;
-      align-items: start;
-    }
+  #chat::-webkit-scrollbar { width: 4px; }
+  #chat::-webkit-scrollbar-track { background: transparent; }
+  #chat::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
-    @media (max-width: 768px) {
-      .app { grid-template-columns: 1fr; }
-    }
+  .msg-wrap {
+    max-width: 720px;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+  }
 
-    /* ─── Panel base ─── */
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 1.75rem;
-    }
+  /* User bubble */
+  .msg-user {
+    align-self: flex-end;
+    background: var(--accent);
+    color: #fff;
+    padding: .65rem 1rem;
+    border-radius: 18px 18px 4px 18px;
+    max-width: 75%;
+    font-size: .92rem;
+    line-height: 1.5;
+  }
 
-    .panel-title {
-      font-family: 'Cinzel', serif;
-      font-size: .78rem;
-      letter-spacing: .18em;
-      text-transform: uppercase;
-      color: var(--gold);
-      margin-bottom: 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: .6rem;
-    }
+  /* Bot response */
+  .msg-bot {
+    align-self: flex-start;
+    max-width: 85%;
+  }
 
-    .panel-title::before {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border);
-    }
+  .bot-label {
+    font-size: .7rem;
+    color: var(--muted);
+    margin-bottom: .4rem;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+  }
 
-    /* ─── Form elements ─── */
-    label {
-      display: block;
-      font-size: .82rem;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-      color: var(--text-dim);
-      margin-bottom: .45rem;
-    }
+  .bot-label::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent2);
+  }
 
-    textarea, input[type="number"], input[type="text"] {
-      width: 100%;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--white);
-      font-family: 'Crimson Pro', serif;
-      font-size: 1rem;
-      padding: .65rem .9rem;
-      border-radius: 3px;
-      outline: none;
-      transition: border-color .2s;
-      resize: vertical;
-    }
+  /* Image card */
+  .img-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    width: 420px;
+    max-width: 100%;
+  }
 
-    textarea:focus, input:focus {
-      border-color: var(--ember);
-    }
+  .img-card img {
+    width: 100%;
+    display: block;
+    animation: fadeIn .5s ease;
+  }
 
-    textarea { min-height: 110px; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-    .field { margin-bottom: 1.25rem; }
+  .img-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .75rem 1rem;
+    border-top: 1px solid var(--border);
+  }
 
-    /* ─── Sliders ─── */
-    .slider-group {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-    }
+  .img-meta {
+    font-size: .72rem;
+    color: var(--muted);
+  }
 
-    .slider-wrap label { display: flex; justify-content: space-between; }
-    .slider-val {
-      color: var(--ember);
-      font-size: .9rem;
-      font-family: 'Cinzel', serif;
-    }
+  .btn-download {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text);
+    padding: .35rem .85rem;
+    border-radius: 8px;
+    font-size: .75rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
 
-    input[type="range"] {
-      -webkit-appearance: none;
-      width: 100%;
-      height: 3px;
-      background: var(--border);
-      border-radius: 2px;
-      outline: none;
-      margin-top: .5rem;
-    }
+  .btn-download:hover { background: var(--border); border-color: var(--border2); }
 
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 14px; height: 14px;
-      border-radius: 50%;
-      background: var(--ember);
-      cursor: pointer;
-      transition: transform .15s;
-    }
+  /* Thinking bubble */
+  .thinking {
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: .65rem .9rem;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 18px 18px 18px 4px;
+  }
 
-    input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: bounce .9s infinite; }
+  .dot:nth-child(2) { animation-delay: .15s; }
+  .dot:nth-child(3) { animation-delay: .3s; }
+  @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
 
-    /* ─── Generate button ─── */
-    #generateBtn {
-      width: 100%;
-      margin-top: .5rem;
-      padding: .9rem 1rem;
-      background: transparent;
-      border: 1px solid var(--ember);
-      color: var(--ember);
-      font-family: 'Cinzel', serif;
-      font-size: .85rem;
-      letter-spacing: .2em;
-      text-transform: uppercase;
-      cursor: pointer;
-      border-radius: 3px;
-      transition: background .2s, color .2s, box-shadow .2s;
-      position: relative;
-      overflow: hidden;
-    }
+  /* Error bubble */
+  .msg-error {
+    align-self: flex-start;
+    background: rgba(220,60,60,0.1);
+    border: 1px solid rgba(220,60,60,0.25);
+    color: #f87171;
+    padding: .65rem 1rem;
+    border-radius: 18px 18px 18px 4px;
+    font-size: .88rem;
+    max-width: 80%;
+  }
 
-    #generateBtn:hover:not(:disabled) {
-      background: var(--ember);
-      color: #000;
-      box-shadow: 0 0 30px rgba(232,101,26,.35);
-    }
+  /* Empty state */
+  #empty {
+    max-width: 420px;
+    margin: 3rem auto;
+    text-align: center;
+  }
 
-    #generateBtn:disabled {
-      opacity: .4;
-      cursor: not-allowed;
-    }
+  #empty .orb {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #a78bfa, #4c35c9);
+    margin: 0 auto 1.25rem;
+    opacity: .9;
+  }
 
-    /* ─── Presets ─── */
-    .presets-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: .6rem;
-      margin-bottom: 1.5rem;
-    }
+  #empty h2 { font-size: 1.15rem; font-weight: 500; margin-bottom: .5rem; }
+  #empty p  { font-size: .85rem; color: var(--muted); line-height: 1.6; }
 
-    .preset-btn {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text-dim);
-      font-family: 'Cinzel', serif;
-      font-size: .7rem;
-      letter-spacing: .08em;
-      padding: .55rem .6rem;
-      cursor: pointer;
-      border-radius: 3px;
-      text-transform: uppercase;
-      transition: border-color .2s, color .2s;
-      text-align: center;
-    }
+  .suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    justify-content: center;
+    margin-top: 1.25rem;
+  }
 
-    .preset-btn:hover {
-      border-color: var(--gold);
-      color: var(--gold);
-    }
+  .suggestion {
+    background: var(--panel);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    padding: .45rem .9rem;
+    border-radius: 99px;
+    font-size: .78rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
 
-    /* ─── Output panel ─── */
-    .output-panel {
-      position: sticky;
-      top: 1.5rem;
-    }
+  .suggestion:hover { border-color: var(--accent); background: rgba(124,106,247,0.08); }
 
-    .image-container {
-      width: 100%;
-      aspect-ratio: 1;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      position: relative;
-    }
+  /* Bottom bar */
+  .bottom {
+    position: relative; z-index: 1;
+    border-top: 1px solid var(--border);
+    background: rgba(7,9,15,0.85);
+    backdrop-filter: blur(12px);
+    padding: .85rem 1rem 1rem;
+    flex-shrink: 0;
+  }
 
-    .image-container img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      animation: fadeIn .6s ease;
-    }
+  .controls-row {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    max-width: 720px;
+    margin: 0 auto .65rem;
+  }
 
-    @keyframes fadeIn { from { opacity: 0; transform: scale(1.02); } to { opacity: 1; transform: scale(1); } }
+  /* Style chips */
+  .style-select {
+    background: var(--panel);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: inherit;
+    font-size: .78rem;
+    padding: .4rem .7rem;
+    border-radius: 8px;
+    outline: none;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
 
-    .placeholder {
-      text-align: center;
-      padding: 2rem;
-    }
+  .style-select:focus { border-color: var(--accent); }
 
-    .placeholder-icon {
-      font-size: 3rem;
-      opacity: .15;
-      margin-bottom: 1rem;
-      display: block;
-    }
+  /* Quality slider */
+  .quality-wrap {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-shrink: 0;
+  }
 
-    .placeholder p {
-      font-style: italic;
-      color: var(--text-dim);
-      font-size: .9rem;
-    }
+  .quality-wrap span { font-size: .72rem; color: var(--muted); white-space: nowrap; }
 
-    /* ─── Loading overlay ─── */
-    .loading-overlay {
-      position: absolute; inset: 0;
-      background: rgba(8,10,15,.85);
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-    }
+  input[type="range"].quality {
+    -webkit-appearance: none;
+    width: 90px; height: 3px;
+    background: var(--border2);
+    border-radius: 2px;
+    outline: none;
+  }
 
-    .loading-overlay.active { display: flex; }
+  input[type="range"].quality::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px; height: 13px;
+    border-radius: 50%;
+    background: var(--accent2);
+    cursor: pointer;
+  }
 
-    .ember-ring {
-      width: 52px; height: 52px;
-      border: 2px solid var(--border);
-      border-top-color: var(--ember);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
+  /* Input row */
+  .input-row {
+    display: flex;
+    align-items: flex-end;
+    gap: .6rem;
+    max-width: 720px;
+    margin: 0 auto;
+  }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
+  #promptInput {
+    flex: 1;
+    background: var(--panel);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: inherit;
+    font-size: .92rem;
+    padding: .7rem 1rem;
+    border-radius: 12px;
+    outline: none;
+    resize: none;
+    min-height: 44px;
+    max-height: 120px;
+    line-height: 1.5;
+    transition: border-color .2s;
+  }
 
-    .loading-text {
-      font-family: 'Cinzel', serif;
-      font-size: .72rem;
-      letter-spacing: .15em;
-      color: var(--ember);
-      text-transform: uppercase;
-    }
+  #promptInput::placeholder { color: var(--muted); }
+  #promptInput:focus { border-color: var(--accent); }
 
-    .loading-sub {
-      font-style: italic;
-      font-size: .82rem;
-      color: var(--text-dim);
-      max-width: 200px;
-      text-align: center;
-    }
+  #sendBtn {
+    width: 42px; height: 42px;
+    flex-shrink: 0;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s, transform .1s;
+  }
 
-    /* ─── Status / toast ─── */
-    #status {
-      margin-top: 1rem;
-      padding: .7rem 1rem;
-      border-radius: 3px;
-      font-size: .88rem;
-      display: none;
-    }
+  #sendBtn:hover:not(:disabled) { background: var(--accent2); }
+  #sendBtn:active:not(:disabled) { transform: scale(.95); }
+  #sendBtn:disabled { opacity: .4; cursor: not-allowed; }
 
-    #status.error   { display: block; background: rgba(192,57,43,.15); border: 1px solid var(--error); color: #e57567; }
-    #status.success { display: block; background: rgba(39,174,96,.1);  border: 1px solid var(--success); color: #58d68d; }
-    #status.info    { display: block; background: rgba(232,101,26,.1); border: 1px solid var(--ember-dim); color: var(--ember); }
-
-    /* ─── Download btn ─── */
-    #downloadBtn {
-      display: none;
-      width: 100%;
-      margin-top: .9rem;
-      padding: .7rem;
-      background: transparent;
-      border: 1px solid var(--gold-dim);
-      color: var(--gold);
-      font-family: 'Cinzel', serif;
-      font-size: .75rem;
-      letter-spacing: .15em;
-      text-transform: uppercase;
-      cursor: pointer;
-      border-radius: 3px;
-      transition: background .2s, border-color .2s;
-      text-align: center;
-    }
-
-    #downloadBtn:hover { background: rgba(201,153,58,.1); border-color: var(--gold); }
-
-    /* ─── Metadata ─── */
-    #metaPanel {
-      display: none;
-      margin-top: 1rem;
-      padding: 1rem;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      font-size: .8rem;
-      color: var(--text-dim);
-    }
-
-    #metaPanel.visible { display: block; }
-    #metaPanel strong { color: var(--text); }
-
-    /* ─── Footer ─── */
-    footer {
-      position: relative; z-index: 1;
-      text-align: center;
-      padding: 1.5rem;
-      border-top: 1px solid var(--border);
-      font-size: .75rem;
-      color: var(--text-dim);
-      letter-spacing: .05em;
-    }
-
-    footer a { color: var(--ember-dim); text-decoration: none; }
-  </style>
+  #sendBtn svg { width: 18px; height: 18px; fill: #fff; }
+</style>
 </head>
 <body>
 
 <header>
-  <div class="rune-line">⚔ Proyecto IA · SDXL · Stable Diffusion ⚔</div>
-  <h1>Image <span>Forge</span></h1>
-  <p class="subtitle">Generación fotorrealista mediante Stable Diffusion XL</p>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    Image Forge
+  </div>
+  <div class="model-badge">SDXL 1.0</div>
 </header>
 
-<main class="app">
-
-  <!-- ── LEFT: Controls ── -->
-  <section>
-
-    <!-- Presets -->
-    <div class="panel" style="margin-bottom:1.5rem;">
-      <div class="panel-title">Estilos Predefinidos</div>
-      <div class="presets-grid" id="presetsGrid">
-        <div class="preset-btn" style="opacity:.5; font-size:.65rem;">Cargando...</div>
-      </div>
+<div id="chat">
+  <div id="empty">
+    <div class="orb"></div>
+    <h2>Genera cualquier imagen</h2>
+    <p>Describe lo que quieres ver y el modelo lo crea para ti.</p>
+    <div class="suggestions">
+      <button class="suggestion" onclick="useSuggestion(this)">Caballero medieval en llamas</button>
+      <button class="suggestion" onclick="useSuggestion(this)">Ciudad cyberpunk nocturna</button>
+      <button class="suggestion" onclick="useSuggestion(this)">Retrato cinematografico</button>
+      <button class="suggestion" onclick="useSuggestion(this)">Montana nevada al atardecer</button>
     </div>
+  </div>
+</div>
 
-    <!-- Prompt form -->
-    <div class="panel">
-      <div class="panel-title">Configuración</div>
+<div class="bottom">
+  <div class="controls-row">
+    <select class="style-select" id="styleSelect">
+      <option value="realistic">Fotorrealista</option>
+      <option value="fantasy">Fantasia oscura</option>
+      <option value="scifi">Ciencia ficcion</option>
+      <option value="portrait">Retrato</option>
+      <option value="landscape">Paisaje epico</option>
+    </select>
 
-      <div class="field">
-        <label for="prompt">Prompt — describe tu imagen</label>
-        <textarea id="prompt" placeholder="burned medieval knight in full plate armor, charred black metal, glowing ember cracks, apocalyptic sky, cinematic, photorealistic, masterpiece..."></textarea>
-      </div>
-
-      <div class="field">
-        <label for="negPrompt">Negative Prompt — qué evitar</label>
-        <textarea id="negPrompt" style="min-height:70px;" placeholder="cartoon, anime, blurry, watermark, low quality...">cartoon, anime, low poly, 3d render, plastic, shiny chrome, bright colors, blurry, low quality, watermark, text, logo</textarea>
-      </div>
-
-      <div class="field slider-group">
-        <div class="slider-wrap">
-          <label>Guidance Scale <span class="slider-val" id="gsVal">7.5</span></label>
-          <input type="range" id="guidanceScale" min="1" max="20" step="0.5" value="7.5" />
-        </div>
-        <div class="slider-wrap">
-          <label>Inference Steps <span class="slider-val" id="stepsVal">30</span></label>
-          <input type="range" id="inferenceSteps" min="10" max="50" step="5" value="30" />
-        </div>
-      </div>
-
-      <div class="field">
-        <label for="seed">Seed (opcional — deja vacío para aleatorio)</label>
-        <input type="number" id="seed" placeholder="42" />
-      </div>
-
-      <button id="generateBtn">⚡ Forjar Imagen</button>
+    <div class="quality-wrap">
+      <span>Rapido</span>
+      <input type="range" class="quality" id="qualitySlider" min="1" max="3" step="1" value="2"/>
+      <span>Detallado</span>
     </div>
+  </div>
 
-  </section>
-
-  <!-- ── RIGHT: Output ── -->
-  <section class="output-panel">
-    <div class="panel">
-      <div class="panel-title">Resultado</div>
-
-      <div class="image-container" id="imgContainer">
-        <div class="placeholder">
-          <span class="placeholder-icon">🔥</span>
-          <p>La imagen forjada aparecerá aquí.<br/>Configura tu prompt y presiona <em>Forjar</em>.</p>
-        </div>
-        <div class="loading-overlay" id="loadingOverlay">
-          <div class="ember-ring"></div>
-          <div class="loading-text">Forjando...</div>
-          <div class="loading-sub">El modelo puede tardar 20–60 seg en el primer intento</div>
-        </div>
-      </div>
-
-      <div id="status"></div>
-      <button id="downloadBtn">⬇ Descargar Imagen</button>
-      <div id="metaPanel"></div>
-    </div>
-  </section>
-
-</main>
-
-<footer>
-  Powered by <a href="https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0" target="_blank">Stable Diffusion XL</a>
-  via Hugging Face Inference API &nbsp;·&nbsp;
-  Backend: FastAPI &nbsp;·&nbsp;
-  Deploy: Render.com
-</footer>
+  <div class="input-row">
+    <textarea id="promptInput" placeholder="Describe la imagen que quieres generar..." rows="1"></textarea>
+    <button id="sendBtn" onclick="generate()">
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+</div>
 
 <script>
-  // ── State ──────────────────────────────────────────────
-  let currentImageB64 = null;
+const STYLE_PARAMS = {
+  realistic: {
+    suffix: ', photorealistic, ultra detailed, sharp focus, 8k, masterpiece',
+    negative: 'cartoon, anime, illustration, painting, low quality, blurry, watermark, text',
+    cfg: 7.5
+  },
+  fantasy: {
+    suffix: ', cinematic dark fantasy atmosphere, dramatic lighting, photorealistic, masterpiece',
+    negative: 'cartoon, anime, low poly, plastic, bright colors, blurry, watermark',
+    cfg: 8.0
+  },
+  scifi: {
+    suffix: ', futuristic, cinematic lighting, ultra detailed, photorealistic, 8k',
+    negative: 'cartoon, anime, medieval, nature, blurry, watermark, low quality',
+    cfg: 7.5
+  },
+  portrait: {
+    suffix: ', cinematic portrait, dramatic side lighting, shallow depth of field, film grain, Kodak Portra 400, photorealistic',
+    negative: 'cartoon, anime, painting, illustration, full body, low quality, watermark',
+    cfg: 9.0
+  },
+  landscape: {
+    suffix: ', epic landscape, volumetric light rays, ultra realistic photography, sharp focus, masterpiece',
+    negative: 'people, buildings, cartoon, anime, blurry, watermark, text',
+    cfg: 8.0
+  }
+};
 
-  // ── Sliders ──────────────────────────────────────────
-  const gsSlider    = document.getElementById('guidanceScale');
-  const stepsSlider = document.getElementById('inferenceSteps');
-  gsSlider.addEventListener('input',    () => document.getElementById('gsVal').textContent    = gsSlider.value);
-  stepsSlider.addEventListener('input', () => document.getElementById('stepsVal').textContent = stepsSlider.value);
+const QUALITY_STEPS = { 1: 20, 2: 30, 3: 45 };
 
-  // ── Load Presets ──────────────────────────────────────
-  async function loadPresets() {
-    try {
-      const res  = await fetch('/presets');
-      const data = await res.json();
-      const grid = document.getElementById('presetsGrid');
-      grid.innerHTML = '';
-      data.presets.forEach(p => {
-        const btn = document.createElement('button');
-        btn.className = 'preset-btn';
-        btn.textContent = p.style;
-        btn.addEventListener('click', () => {
-          document.getElementById('prompt').value    = p.prompt;
-          document.getElementById('negPrompt').value = p.negative_prompt;
-        });
-        grid.appendChild(btn);
-      });
-    } catch (e) {
-      document.getElementById('presetsGrid').innerHTML = '<span style="color:var(--text-dim);font-size:.75rem;">No se pudieron cargar los presets.</span>';
+let generating = false;
+
+function useSuggestion(btn) {
+  document.getElementById('promptInput').value = btn.textContent;
+  generate();
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+document.getElementById('promptInput').addEventListener('input', function() {
+  autoResize(this);
+});
+
+document.getElementById('promptInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    generate();
+  }
+});
+
+function hideEmpty() {
+  const el = document.getElementById('empty');
+  if (el) el.remove();
+}
+
+function appendUserMsg(text) {
+  hideEmpty();
+  const chat = document.getElementById('chat');
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-wrap';
+  wrap.innerHTML = `<div class="msg-user">${escHtml(text)}</div>`;
+  chat.appendChild(wrap);
+  return wrap;
+}
+
+function appendThinking() {
+  const chat = document.getElementById('chat');
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-wrap';
+  wrap.innerHTML = `
+    <div class="bot-label">Image Forge</div>
+    <div class="thinking">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>`;
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+  return wrap;
+}
+
+function replaceWithImage(wrap, b64, prompt, params) {
+  const steps = params.num_inference_steps;
+  const style = document.getElementById('styleSelect').options[document.getElementById('styleSelect').selectedIndex].text;
+
+  wrap.innerHTML = `
+    <div class="bot-label">Image Forge</div>
+    <div class="img-card">
+      <img src="data:image/png;base64,${b64}" alt="${escHtml(prompt)}"/>
+      <div class="img-card-footer">
+        <span class="img-meta">${style} &middot; ${steps} pasos</span>
+        <button class="btn-download" onclick="download('${b64}')">Descargar</button>
+      </div>
+    </div>`;
+  document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
+}
+
+function replaceWithError(wrap, msg) {
+  wrap.innerHTML = `
+    <div class="bot-label">Image Forge</div>
+    <div class="msg-error">${escHtml(msg)}</div>`;
+}
+
+function download(b64) {
+  const a = document.createElement('a');
+  a.href = 'data:image/png;base64,' + b64;
+  a.download = 'image_forge_' + Date.now() + '.png';
+  a.click();
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function generate() {
+  if (generating) return;
+
+  const input = document.getElementById('promptInput');
+  const prompt = input.value.trim();
+  if (!prompt) return;
+
+  const style  = document.getElementById('styleSelect').value;
+  const quality = parseInt(document.getElementById('qualitySlider').value);
+  const sp     = STYLE_PARAMS[style];
+  const steps  = QUALITY_STEPS[quality];
+
+  generating = true;
+  document.getElementById('sendBtn').disabled = true;
+  input.value = '';
+  input.style.height = 'auto';
+
+  appendUserMsg(prompt);
+  const thinkWrap = appendThinking();
+
+  const fullPrompt = prompt + sp.suffix;
+
+  try {
+    const resp = await fetch('/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify({
+        prompt: fullPrompt,
+        negative_prompt: sp.negative,
+        guidance_scale: sp.cfg,
+        num_inference_steps: steps,
+        width: 1024,
+        height: 1024
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ detail: 'Error desconocido' }));
+      throw new Error(err.detail || 'Error ' + resp.status);
     }
+
+    const data = await resp.json();
+    replaceWithImage(thinkWrap, data.image_base64, prompt, data.parameters);
+
+  } catch (e) {
+    replaceWithError(thinkWrap, e.message);
+  } finally {
+    generating = false;
+    document.getElementById('sendBtn').disabled = false;
   }
-
-  loadPresets();
-
-  // ── Status helper ────────────────────────────────────
-  function setStatus(msg, type = 'info') {
-    const el = document.getElementById('status');
-    el.textContent = msg;
-    el.className   = type;
-  }
-
-  function clearStatus() {
-    const el = document.getElementById('status');
-    el.className = '';
-    el.textContent = '';
-  }
-
-  // ── Generate ──────────────────────────────────────────
-  document.getElementById('generateBtn').addEventListener('click', async () => {
-    const prompt = document.getElementById('prompt').value.trim();
-    if (!prompt) { setStatus('Escribe un prompt antes de generar.', 'error'); return; }
-
-    const btn     = document.getElementById('generateBtn');
-    const overlay = document.getElementById('loadingOverlay');
-    const dlBtn   = document.getElementById('downloadBtn');
-    const meta    = document.getElementById('metaPanel');
-
-    btn.disabled     = true;
-    btn.textContent  = '⏳ Generando...';
-    overlay.classList.add('active');
-    dlBtn.style.display = 'none';
-    meta.classList.remove('visible');
-    clearStatus();
-
-    const seedVal = document.getElementById('seed').value;
-    const payload = {
-      prompt:               prompt,
-      negative_prompt:      document.getElementById('negPrompt').value.trim() || undefined,
-      guidance_scale:       parseFloat(gsSlider.value),
-      num_inference_steps:  parseInt(stepsSlider.value),
-      seed:                 seedVal !== '' ? parseInt(seedVal) : null,
-    };
-
-    try {
-      const res  = await fetch('/generate', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.detail || `Error ${res.status}`);
-      }
-
-      // Show image
-      currentImageB64 = data.image_base64;
-      const container = document.getElementById('imgContainer');
-      const existing  = container.querySelector('img');
-      if (existing) existing.remove();
-      container.querySelector('.placeholder')?.remove();
-
-      const img = document.createElement('img');
-      img.src = `data:image/png;base64,${currentImageB64}`;
-      img.alt = prompt;
-      container.insertBefore(img, overlay);
-
-      // Download button
-      dlBtn.style.display = 'block';
-      dlBtn.onclick = () => {
-        const a   = document.createElement('a');
-        a.href     = `data:image/png;base64,${currentImageB64}`;
-        a.download = `sdxl_${Date.now()}.png`;
-        a.click();
-      };
-
-      // Metadata
-      meta.classList.add('visible');
-      meta.innerHTML = `
-        <strong>Prompt:</strong> ${data.prompt_used}<br/>
-        <strong>Guidance Scale:</strong> ${data.parameters.guidance_scale} &nbsp;
-        <strong>Steps:</strong> ${data.parameters.num_inference_steps} &nbsp;
-        <strong>Seed:</strong> ${data.parameters.seed ?? 'aleatorio'}
-      `;
-
-      setStatus('✓ Imagen generada exitosamente.', 'success');
-
-    } catch (err) {
-      setStatus(`Error: ${err.message}`, 'error');
-    } finally {
-      btn.disabled    = false;
-      btn.textContent = '⚡ Forjar Imagen';
-      overlay.classList.remove('active');
-    }
-  });
+}
 </script>
 </body>
 </html>

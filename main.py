@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 # ─────────────────────────────────────────────
 # Model config
 # ─────────────────────────────────────────────
-MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
+MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"  # T4 de Colab aguanta con fp16
 DEVICE   = "cuda" if torch.cuda.is_available() else "cpu"
 DTYPE    = torch.float16 if DEVICE == "cuda" else torch.float32
 
@@ -52,6 +52,7 @@ async def lifespan(app: FastAPI):
 
     if DEVICE == "cuda":
         pipe.enable_attention_slicing()
+        pipe.enable_vae_slicing()   # Libera VRAM extra — clave en 3050/4GB
 
     logger.info("✅ Modelo cargado y listo.")
     yield
@@ -90,8 +91,9 @@ class GenerateRequest(BaseModel):
     negative_prompt: Optional[str] = Field(
         default="cartoon, anime, low quality, blurry, watermark, text, logo, nsfw"
     )
-    guidance_scale: float = Field(default=7.5, ge=1.0, le=20.0)
-    num_inference_steps: int = Field(default=30, ge=10, le=50)
+    # Turbo: guidance_scale=0 y 1-4 pasos es lo óptimo
+    guidance_scale: float = Field(default=7.5, ge=0.0, le=20.0)
+    num_inference_steps: int = Field(default=30, ge=1, le=50)
     seed: Optional[int] = Field(default=None)
     width: int = Field(default=1024, ge=512, le=1024)
     height: int = Field(default=1024, ge=512, le=1024)
